@@ -1,5 +1,17 @@
 #include "nm.h"
 
+/*
+** ft_nm
+**
+** Description:
+**   This is the core function of the nm program. It handles file checking,
+**   memory mapping, and dispatching to the appropriate handler (32-bit or 64-bit).
+**
+** Why:
+**   We need to verify if the file is valid, not a directory, and map it into memory
+**   for efficient access. Checking the ELF magic numbers allows us to determine
+**   if it's a valid ELF file and which architecture to use.
+*/
 int ft_nm(int fd, char *filename, t_nm_flags flags) {
 	struct stat file_info;
 	char *data;
@@ -47,6 +59,18 @@ int ft_nm(int fd, char *filename, t_nm_flags flags) {
 	return 0;
 }
 
+/*
+** parse_flags
+**
+** Description:
+**   Parses command-line arguments to set configuration flags for the nm program.
+**   Supported flags: -a (all), -g (extern only), -u (undefined only),
+**   -r (reverse sort), -p (no sort).
+**
+** Why:
+**   To support bonus features and standard nm behavior options. We extract flags
+**   first so the remaining arguments are treated as filenames.
+*/
 int parse_flags(int *argc, char ***argv, t_nm_flags *flags)
 {
 	int i = 1;
@@ -92,6 +116,16 @@ int parse_flags(int *argc, char ***argv, t_nm_flags *flags)
 	return 0;
 }
 
+/*
+** main
+**
+** Description:
+**   Entry point of the program. Parses flags and iterates over input files.
+**
+** Why:
+**   Standard C entry point. It orchestrates the flow: parse flags -> loop files
+**   -> call ft_nm for each. Defaulting to "a.out" if no file is provided is standard behavior.
+*/
 int main(int argc, char **argv) {
 	int fd;
 	int ret;

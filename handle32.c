@@ -1,5 +1,15 @@
 #include "nm.h"
 
+/*
+** format_check32
+**
+** Description:
+**   Validates the ELF32 header and checks for basic file integrity.
+**
+** Why:
+**   Ensures the file claims to be a valid ELF32 file and that
+**   section headers are accessible. Prevents processing invalid files.
+*/
 int format_check32(Elf32_Ehdr *elf_header, struct stat fd_info)
 {
 	if (!elf_header)
@@ -37,6 +47,17 @@ int format_check32(Elf32_Ehdr *elf_header, struct stat fd_info)
 	return 0;
 }
 
+/*
+** elf32_symbols
+**
+** Description:
+**   Determines the character code (e.g., 'T', 'U', 'D') for a given symbol
+**   based on its type, bind, section index, and flags.
+**
+** Why:
+**   Specific to 32-bit ELF structures. Maps the internal ELF symbol type
+**   to the standard single-letter code used by `nm`.
+*/
 int elf32_symbols(Elf32_Sym sym, Elf32_Shdr *shdr, char *file_data, Elf32_Ehdr *elf_header)
 {
 	char c = '?';
@@ -93,6 +114,17 @@ int elf32_symbols(Elf32_Sym sym, Elf32_Shdr *shdr, char *file_data, Elf32_Ehdr *
 	return c;
 }
 
+/*
+** handle32_symtab
+**
+** Description:
+**   Processes the symbol table section (SHT_SYMTAB) for 32-bit ELF files.
+**   Extracts, parses, sorts, and prints the symbols.
+**
+** Why:
+**   Reads the symbol table entries, resolves strings from the string table,
+**   converts them to our internal `t_sym` format, and handles the display logic.
+*/
 int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_data, int n, t_nm_flags flags)
 {
 	uint32_t sh_offset = read_uint32(section_h[n].sh_offset, file_data);
@@ -136,6 +168,16 @@ int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_da
 	return 0;
 }
 
+/*
+** handle32
+**
+** Description:
+**   Iterates over the ELF32 section headers to find the Symbol Table (SHT_SYMTAB).
+**
+** Why:
+**   The entry point for 32-bit ELF processing. Finds the symbol table and delegates
+**   to `handle32_symtab`.
+*/
 int handle32(char *file_data, Elf32_Ehdr *elf_header, struct stat fd_info, t_nm_flags flags)
 {
 	uint32_t sh_type;

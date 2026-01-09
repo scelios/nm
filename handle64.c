@@ -1,5 +1,15 @@
 #include "nm.h"
 
+/*
+** format_check64
+**
+** Description:
+**   Validates the ELF64 header and checks for basic file integrity.
+**
+** Why:
+**   We need to ensure the file claims to be a valid ELF64 file and that
+**   the section headers are within reasonable bounds before we attempt to parse them.
+*/
 int format_check64(Elf64_Ehdr *elf_header, struct stat fd_info)
 {
 	if (!elf_header)
@@ -37,6 +47,18 @@ int format_check64(Elf64_Ehdr *elf_header, struct stat fd_info)
 	return 0;
 }
 
+/*
+** elf64_symbols
+**
+** Description:
+**   Determines the character code (e.g., 'T', 'U', 'D') for a given symbol
+**   based on its type, bind, section index, and flags.
+**
+** Why:
+**   The `nm` command output requires a specific single-character identifier for each symbol
+**   to indicate its nature (Text, Data, Undefined, etc.). This function implements that logic
+**   according to ELF specifications.
+*/
 int elf64_symbols(Elf64_Sym sym, Elf64_Shdr *shdr, char *file_data, Elf64_Ehdr *elf_header)
 {
 	char c = '?';
@@ -93,6 +115,17 @@ int elf64_symbols(Elf64_Sym sym, Elf64_Shdr *shdr, char *file_data, Elf64_Ehdr *
 	return c;
 }
 
+/*
+** printTable
+**
+** Description:
+**   Iterates through the sorted symbol table and prints each entry that passes
+**   the filter flags.
+**
+** Why:
+**   We need to display the results to stdout. This function handles formatting
+**   addresses (padding), the type character, and the symbol name. It also respects filters like -u or -g.
+*/
 void printTable(t_sym *tab, size_t tab_size, t_nm_flags flags, int bits)
 {
 	for (size_t i = 0; i < tab_size; i++)
@@ -126,6 +159,18 @@ void printTable(t_sym *tab, size_t tab_size, t_nm_flags flags, int bits)
 		}
 	}
 }
+
+/*
+** handle64_symtab
+**
+** Description:
+**   Processes the symbol table section (SHT_SYMTAB). Extracts symbol information,
+**   resolves names from the string table, sorts them, and initiates printing.
+**
+** Why:
+**   This is where the raw ELF symbol data is converted into our internal `t_sym` structure list.
+**   We need to read offsets, values, and names to build the list for `nm` output.
+*/
 int handle64_symtab(Elf64_Shdr *section_h, Elf64_Ehdr *elf_header, char *file_data, int n, t_nm_flags flags)
 {
 	uint64_t sh_offset = read_uint64(section_h[n].sh_offset, file_data);
@@ -169,6 +214,16 @@ int handle64_symtab(Elf64_Shdr *section_h, Elf64_Ehdr *elf_header, char *file_da
 	return 0;
 }
 
+/*
+** handle64
+**
+** Description:
+**   Iterates over the ELF64 section headers to find the Symbol Table (SHT_SYMTAB).
+**
+** Why:
+**   We need to find where symbols are stored in the ELF file. Once found,
+**   we pass control to `handle64_symtab` to parse them.
+*/
 int handle64(char *file_data, Elf64_Ehdr *elf_header, struct stat fd_info, t_nm_flags flags)
 {
 	uint64_t sh_type;

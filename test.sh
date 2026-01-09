@@ -22,3 +22,22 @@ for file in test/*; do
     fi
     rm nm_output.txt ft_nm_output.txt
 done
+
+echo -e "\n\nAll tests completed. Now doing it with bonus options."
+
+
+for file in test/*; do
+    echo -n "Comparing $file... "
+    LC_ALL=C nm -ragpur $file 2>/dev/null | grep -v "bfd plugin" > nm_output.txt
+    ./ft_nm -ragpur $file > ft_nm_output.txt 2>/dev/null
+    
+    DIFF=$(diff nm_output.txt ft_nm_output.txt)
+    if [ "$DIFF" != "" ]; then
+        echo -e "${RED}KO${NC}"
+        echo "$DIFF"
+    else
+        echo -e "${GREEN}OK${NC}"
+    fi
+    rm nm_output.txt ft_nm_output.txt
+done
+echo -e "\n\nAll bonus tests completed."

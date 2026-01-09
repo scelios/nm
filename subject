@@ -1,0 +1,49 @@
+Subjet
+Program name ft_nm
+Turn in files
+Makefile Yes
+Arguments
+External functs. open(2) close(2) mmap(2) munmap(2) write(2)
+fstat(2) malloc(3) free(3) exit(3) perror(3)
+strerror(1) getpagesize(2)
+Libft authorized
+Description You have to recode the nm (with no options)
+To do this project, you will have to use a linux OS, you shall use docker or a VM if
+needed. You have to work with ELF binaries. You have to handle x86_32, x64, object
+files, .so
+Use the file command to view details on a file. You can use the binaries located in
+your system (/usr/bin/, /usr/lib/...).
+man nm
+• This project will be corrected by humans only. You’re allowed to organise and name
+your files as you see fit, but you must follow the following rules.
+• The executable must be named ft_nm
+• You must code in C and use a Makefile.
+• Your Makefile must compile the project and must contain the usual rules.
+• If you are clever, you will use your library for your ft_nm. Submit also your folder
+libft including its own Makefile at the root of your repository. Your Makefile
+will have to compile the library, and then compile your project.
+• Output is to be similar to nm on the symbols list (order, offset, padding...). Other
+aspects can have some small differences (filename, etc).
+• Your program must behave like the system nm on every other aspect. You have to
+handle errors carefully. In no way can your program quit in an unexpected manner
+(Segmentation fault, bus error, double free, etc).
+3
+A completely UNIX project ft_nm
+• Be cautious. There are many ways to lead your program out of the mapped content,
+may it be with non-null terminated string, incorrect offsets... Check everything.
+• Make sure that every value that you parse is correct: for instance, when parsing
+flags, architecture, match your result with a reference to ensure its value is correct.
+4
+Chapter III
+Bonus part
+We will look at your bonus part if and only if your mandatory part
+is EXCELLENT. This means that your must complete the mandatory part,
+beginning to end, and your error management needs to be flawless,
+even in cases of twisted or bad usage. If that’s not the case, your
+bonuses will be totally IGNORED.
+Managing the following options:
+• -a
+• -g
+• -u
+• -r
+• -p

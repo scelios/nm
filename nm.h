@@ -23,21 +23,29 @@ typedef struct s_sym {
 	int used;
 }	t_sym;
 
+typedef struct s_nm_flags {
+	int a;
+	int g;
+	int u;
+	int r;
+	int p;
+} t_nm_flags;
+
 int elf64_symbols(Elf64_Sym sym, Elf64_Shdr *shdr, char *file_data, Elf64_Ehdr *elf_header);
 int elf32_symbols(Elf32_Sym sym, Elf32_Shdr *shdr, char *file_data, Elf32_Ehdr *elf_header);
 
-int handle64(char *file_data, Elf64_Ehdr *elf_header, struct stat fd_info);
-int handle32(char *file_data, Elf32_Ehdr *elf_header, struct stat fd_info);
+int handle64(char *file_data, Elf64_Ehdr *elf_header, struct stat fd_info, t_nm_flags flags);
+int handle32(char *file_data, Elf32_Ehdr *elf_header, struct stat fd_info, t_nm_flags flags);
 
-void printTable(t_sym *tab, size_t tab_size);
+void printTable(t_sym *tab, size_t tab_size, t_nm_flags flags, int bits);
 bool str_is_nullterm(const char *start, const char *end);
 int	ft_strncmp(const char *first, const char *second, size_t length);
 void	ft_putstr_fd(int fd, char *s);
-int	ft_putnbr_base_printf(long long nbr, char *base, int a);
+void	print_hex(uint64_t nbr, int width);
 size_t	ft_strlen(const char *theString);
 
 
-void sort(t_sym *syms, int size);
+void sort(t_sym *syms, int size, t_nm_flags flags);
 void mergeSort(t_sym *syms, int l, int r);
 
 

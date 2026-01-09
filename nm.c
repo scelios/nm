@@ -1,6 +1,6 @@
 #include "nm.h"
 
-int ft_nm(int fd, char *filename) {
+int ft_nm(int fd, char *filename, t_nm_flags flags) {
 	struct stat file_info;
 	char *data;
 
@@ -25,9 +25,9 @@ int ft_nm(int fd, char *filename) {
 	if (data[EI_MAG0] == ELFMAG0 && data[EI_MAG1] == ELFMAG1 && data[EI_MAG2] == ELFMAG2 && data[EI_MAG3] == ELFMAG3)
 	{
 		if (data[EI_CLASS] == ELFCLASS64)
-			return handle64(data, (Elf64_Ehdr *)data, file_info);
+			return handle64(data, (Elf64_Ehdr *)data, file_info, flags);
 		else if (data[EI_CLASS] == ELFCLASS32)
-			return handle32(data, (Elf32_Ehdr *)data, file_info);
+			return handle32(data, (Elf32_Ehdr *)data, file_info, flags);
 	}
 	else
 	{
@@ -47,35 +47,95 @@ int ft_nm(int fd, char *filename) {
 	return 0;
 }
 
-int main(int a, char **b) {
+int parse_flags(int *argc, char ***argv, t_nm_flags *flags)
+{
+	int i = 1;
+	int j;
+
+	flags->a = 0;
+	flags->g = 0;
+	flags->u = 0;
+	flags->r = 0;
+	flags->p = 0;
+
+	while (i < *argc)
+	{
+		if ((*argv)[i][0] == '-')
+		{
+			j = 1;
+			while ((*argv)[i][j])
+			{
+				if ((*argv)[i][j] == 'a') flags->a = 1;
+				else if ((*argv)[i][j] == 'g') flags->g = 1;
+				else if ((*argv)[i][j] == 'u') flags->u = 1;
+				else if ((*argv)[i][j] == 'r') flags->r = 1;
+				else if ((*argv)[i][j] == 'p') flags->p = 1;
+				else 
+				{
+					ft_putstr_fd(2, "ft_nm: invalid option -- '");
+					write(2, &(*argv)[i][j], 1);
+					ft_putstr_fd(2, "'\n");
+					return -1;
+				}
+				j++;
+			}
+			// remove this arg
+			for (int k = i; k < *argc - 1; k++)
+				(*argv)[k] = (*argv)[k + 1];
+			(*argc)--;
+		}
+		else
+		{
+			i++;
+		}
+	}
+	return 0;
+}
+
+int main(int argc, char **argv) {
 	int fd;
 	int ret;
+	t_nm_flags flags;
 
-	if (a == 1)
+	if (parse_flags(&argc, &argv, &flags) < 0)
+		return 1;
+
+	if (argc == 1)
 	{
 		fd = open("a.out", O_RDONLY);
 		if (fd == -1)
 		{
-			ft_putstr_fd(2, "ft_nm: 'a.out': Unable to unmap file\n");
+			ft_putstr_fd(2, "ft_nm: 'a.out': No such file\n");
 			exit(1);
 		}
-		ret = ft_nm(fd, "a.out");
+		ret = ft_nm(fd, "a.out", flags);
 		close(fd);
 	}
 	else
 	{
-		for (int i = 1; i < a; i++)
+		// if multiple files, print filename before output if not just one
+		int print_fname = (argc > 2);
+		
+		for (int i = 1; i < argc; i++)
 		{
-			fd = open(b[i], O_RDONLY);
+			fd = open(argv[i], O_RDONLY);
 			if (fd == -1)
 			{
 				ft_putstr_fd(2, "ft_nm: '");
-				ft_putstr_fd(2, b[i]);
-				ft_putstr_fd(2, "': Unable to unmap file\n");
-				exit(1);
+				ft_putstr_fd(2, argv[i]);
+				ft_putstr_fd(2, "': No such file\n");
 			}
-			ret = ft_nm(fd, b[i]);
-			close(fd);
+			else
+			{
+				if (print_fname)
+				{
+					ft_putstr_fd(1, "\n");
+					ft_putstr_fd(1, argv[i]);
+					ft_putstr_fd(1, ":\n");
+				}
+				ret = ft_nm(fd, argv[i], flags);
+				close(fd);
+			}
 		}
 	}
 

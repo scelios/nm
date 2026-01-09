@@ -93,7 +93,7 @@ int elf32_symbols(Elf32_Sym sym, Elf32_Shdr *shdr, char *file_data, Elf32_Ehdr *
 	return c;
 }
 
-int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_data, int n)
+int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_data, int n, t_nm_flags flags)
 {
 	uint32_t sh_offset = read_uint32(section_h[n].sh_offset, file_data);
 	uint32_t sh_link = read_uint32(section_h[n].sh_link, file_data);
@@ -110,7 +110,13 @@ int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_da
 	for (size_t i = 1; i < symtab_size; i++)
 	{
 		uint32_t type = ELF32_ST_TYPE(symtab[i].st_info);
-		if (type == STT_FUNC || type == STT_OBJECT || type == STT_NOTYPE || type == STT_GNU_IFUNC || type == STT_TLS)
+		int keep = 0;
+		if (flags.a)
+			keep = 1;
+		else if (type == STT_FUNC || type == STT_OBJECT || type == STT_NOTYPE || type == STT_GNU_IFUNC || type == STT_TLS)
+			keep = 1;
+		
+		if (keep)
 		{
 			tab[tab_size].addr = read_uint32(symtab[i].st_value, file_data);
 			tab[tab_size].letter = elf32_symbols(symtab[i], section_h, file_data, elf_header);
@@ -123,14 +129,14 @@ int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_da
 		}
 	}
 
-	sort(tab, tab_size);
-	printTable(tab, tab_size);
+	sort(tab, tab_size, flags);
+	printTable(tab, tab_size, flags, 32);
 	
 	free(tab);
 	return 0;
 }
 
-int handle32(char *file_data, Elf32_Ehdr *elf_header, struct stat fd_info)
+int handle32(char *file_data, Elf32_Ehdr *elf_header, struct stat fd_info, t_nm_flags flags)
 {
 	uint32_t sh_type;
 	uint32_t offset = read_uint32(elf_header->e_shoff, file_data);
@@ -151,7 +157,7 @@ int handle32(char *file_data, Elf32_Ehdr *elf_header, struct stat fd_info)
 
 		sh_type = read_uint32(section_h[i].sh_type, file_data);
 		if (sh_type == SHT_SYMTAB)
-			return handle32_symtab(section_h, elf_header, file_data, i);
+			return handle32_symtab(section_h, elf_header, file_data, i, flags);
 	}
 	ft_putstr_fd(2, "Symbol table or string table not found\n");
 	return 1;

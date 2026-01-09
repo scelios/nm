@@ -93,32 +93,40 @@ int elf64_symbols(Elf64_Sym sym, Elf64_Shdr *shdr, char *file_data, Elf64_Ehdr *
 	return c;
 }
 
-void printTable(t_sym *tab, size_t tab_size)
+void printTable(t_sym *tab, size_t tab_size, t_nm_flags flags, int bits)
 {
 	for (size_t i = 0; i < tab_size; i++)
 	{
+		if (flags.u && tab[i].shndx != SHN_UNDEF)
+			continue;
+		
+		if (flags.g && (tab[i].letter >= 'a' && tab[i].letter <= 'z'))
+			continue;
+
 		if (tab[i].shndx == SHN_UNDEF)
 		{
-			ft_putstr_fd(1, "                 ");
+			if (bits == 32)
+				ft_putstr_fd(1, "        ");
+			else
+				ft_putstr_fd(1, "                ");
+			ft_putstr_fd(1, " ");
 			write(1, &tab[i].letter, 1);
 			ft_putstr_fd(1, " ");
 			ft_putstr_fd(1, tab[i].name);
 			ft_putstr_fd(1, "\n");
-			// printf("%16c %c %s\n", ' ', tab[i].letter, tab[i].name);
 		}
 		else
 		{
-			ft_putnbr_base_printf(tab[i].addr, "0123456789abcdef",1);
+			print_hex(tab[i].addr, (bits == 32) ? 8 : 16);
 			ft_putstr_fd(1, " ");
 			write(1, &tab[i].letter, 1);
 			ft_putstr_fd(1, " ");
 			ft_putstr_fd(1, tab[i].name);
 			ft_putstr_fd(1, "\n");
-			// printf("%016lx %c %s\n", tab[i].addr, tab[i].letter, tab[i].name);
 		}
 	}
 }
-int handle64_symtab(Elf64_Shdr *section_h, Elf64_Ehdr *elf_header, char *file_data, int n)
+int handle64_symtab(Elf64_Shdr *section_h, Elf64_Ehdr *elf_header, char *file_data, int n, t_nm_flags flags)
 {
 	uint64_t sh_offset = read_uint64(section_h[n].sh_offset, file_data);
 	uint64_t sh_link = read_uint32(section_h[n].sh_link, file_data);
@@ -135,7 +143,13 @@ int handle64_symtab(Elf64_Shdr *section_h, Elf64_Ehdr *elf_header, char *file_da
 	for (size_t i = 1; i < symtab_size; i++)
 	{
 		uint64_t type = ELF64_ST_TYPE(symtab[i].st_info);
-		if (type == STT_FUNC || type == STT_OBJECT || type == STT_NOTYPE || type == STT_GNU_IFUNC || type == STT_TLS)
+		int keep = 0;
+		if (flags.a)
+			keep = 1;
+		else if (type == STT_FUNC || type == STT_OBJECT || type == STT_NOTYPE || type == STT_GNU_IFUNC || type == STT_TLS)
+			keep = 1;
+		
+		if (keep)
 		{
 			tab[tab_size].addr = read_uint64(symtab[i].st_value, file_data);
 			tab[tab_size].letter = elf64_symbols(symtab[i], section_h, file_data, elf_header);
@@ -148,14 +162,14 @@ int handle64_symtab(Elf64_Shdr *section_h, Elf64_Ehdr *elf_header, char *file_da
 		}
 	}
 
-	sort(tab, tab_size);
-	printTable(tab, tab_size);
+	sort(tab, tab_size, flags);
+	printTable(tab, tab_size, flags, 64);
 	
 	free(tab);
 	return 0;
 }
 
-int handle64(char *file_data, Elf64_Ehdr *elf_header, struct stat fd_info)
+int handle64(char *file_data, Elf64_Ehdr *elf_header, struct stat fd_info, t_nm_flags flags)
 {
 	uint64_t sh_type;
 	uint64_t offset = read_uint64(elf_header->e_shoff, file_data);
@@ -176,7 +190,7 @@ int handle64(char *file_data, Elf64_Ehdr *elf_header, struct stat fd_info)
 
 		sh_type = read_uint32(section_h[i].sh_type, file_data);
 		if (sh_type == SHT_SYMTAB)
-			return handle64_symtab(section_h, elf_header, file_data, i);
+			return handle64_symtab(section_h, elf_header, file_data, i, flags);
 	}
 	ft_putstr_fd(2, "Symbol table or string table not found\n");
 	return 1;

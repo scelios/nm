@@ -1,24 +1,41 @@
 #include "nm.h"
 
-void sort(t_sym *array, int size)
+int	cmp_sym(t_sym a, t_sym b, t_nm_flags flags)
 {
+	int ret = ft_strncmp(a.name, b.name, 100000); // effectively strcmp
+	if (ret != 0)
+		return (flags.r ? -ret : ret);
+	
+	if (a.addr < b.addr)
+		return (flags.r ? 1 : -1);
+	if (a.addr > b.addr)
+		return (flags.r ? -1 : 1);
+	return (0);
+}
 
-	for (int step = 1; step < size ; step++) 
+void sort(t_sym *array, int size, t_nm_flags flags)
+{
+	int i;
+	int j;
+	t_sym temp;
+
+	if (flags.p)
+		return;
+
+	i = 0;
+	while (i < size)
 	{
-		int key = ft_strncmp(array[step].name, array[step - 1].name, 20);
-		// printf("key: %d\n", key);
-		int j = step - 1;
-
-		while (j >= 0 && key < 0) 
+		j = i + 1;
+		while (j < size)
 		{
-			t_sym temp = array[j];
-			array[j] = array[j + 1];
-			array[j + 1] = temp;
-			j--;
-			if (j >= 0) {
-				key = ft_strncmp(array[j + 1].name, array[j].name,20);
+			if (cmp_sym(array[i], array[j], flags) > 0)
+			{
+				temp = array[i];
+				array[i] = array[j];
+				array[j] = temp;
 			}
+			j++;
 		}
-		
+		i++;
 	}
 }

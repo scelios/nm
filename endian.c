@@ -30,32 +30,29 @@ bool need_change_endian(char *file)
 }
 uint64_t read_uint64(uint64_t nb, char *file)
 {
-	uint64_t res = nb;
 	bool endian = need_change_endian(file);
 
 	if (endian)
 		reverse_endian(&nb, sizeof(uint64_t));
-	return (res);
+	return (nb);
 }
 
 uint32_t read_uint32(uint32_t nb, char *file)
 {
-	uint32_t res = nb;
 	bool endian = need_change_endian(file);
 
 	if (endian)
 		reverse_endian(&nb, sizeof(uint32_t));
-	return (res);
+	return (nb);
 }
 
 uint16_t read_uint16(uint16_t nb, char *file)
 {
-	uint16_t res = nb;
 	bool endian = need_change_endian(file);
 
 	if (endian)
 		reverse_endian(&nb, sizeof(uint16_t));
-	return (res);
+	return (nb);
 }
 
 void reverse_endian(void *ptr, size_t length)

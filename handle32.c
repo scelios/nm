@@ -97,14 +97,16 @@ int elf32_symbols(Elf32_Sym sym, Elf32_Shdr *shdr, char *file_data, Elf32_Ehdr *
 
 		if (type == SHT_NOBITS)
 			c = 'B';
+		else if (!(flags & SHF_ALLOC))
+			c = 'N';
 		else if (!(flags & SHF_WRITE))
 		{
-		if(flags & SHF_ALLOC && flags & SHF_EXECINSTR)
-			c = 'T';
-		else
-			c = 'R';
+			if (flags & SHF_ALLOC && flags & SHF_EXECINSTR)
+				c = 'T';
+			else
+				c = 'R';
 		}
-		else if(flags & SHF_EXECINSTR)
+		else if (flags & SHF_EXECINSTR)
 			c = 'T';
 		else
 			c = 'D';
@@ -132,6 +134,11 @@ int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_da
 	Elf32_Sym *symtab = (Elf32_Sym *)(file_data + sh_offset);
 	size_t symtab_size = read_uint32(section_h[n].sh_size, file_data) / read_uint32(section_h[n].sh_entsize, file_data);
 	char *strtab = file_data + read_uint32(section_h[sh_link].sh_offset, file_data);
+
+	// Get section header string table for STT_SECTION symbols
+	uint16_t shstrndx = read_uint16(elf_header->e_shstrndx, file_data);
+	char *shstrtab = file_data + read_uint32(section_h[shstrndx].sh_offset, file_data);
+
 	t_sym *tab = malloc(sizeof(t_sym) * symtab_size);
 	size_t tab_size = 0;
 	if (!tab)
@@ -153,10 +160,28 @@ int handle32_symtab(Elf32_Shdr *section_h, Elf32_Ehdr *elf_header, char *file_da
 			tab[tab_size].addr = read_uint32(symtab[i].st_value, file_data);
 			tab[tab_size].letter = elf32_symbols(symtab[i], section_h, file_data, elf_header);
 			tab[tab_size].shndx = read_uint16(symtab[i].st_shndx, file_data);
-			if (!str_is_nullterm(strtab + read_uint32(symtab[i].st_name, file_data), strtab + read_uint32(section_h[sh_link].sh_size, file_data)))
-				tab[tab_size].name = "(null)";
+
+			uint32_t name_idx = read_uint32(symtab[i].st_name, file_data);
+			if (name_idx != 0)
+			{
+				if (!str_is_nullterm(strtab + name_idx, strtab + read_uint32(section_h[sh_link].sh_size, file_data)))
+					tab[tab_size].name = "(null)";
+				else
+					tab[tab_size].name = strtab + name_idx;
+			}
+			else if (flags.a)
+			{
+				// Use section name if symbol name is empty
+				uint16_t sec_idx = read_uint16(symtab[i].st_shndx, file_data);
+				if (sec_idx < read_uint16(elf_header->e_shnum, file_data))
+					tab[tab_size].name = shstrtab + read_uint32(section_h[sec_idx].sh_name, file_data);
+				else
+					tab[tab_size].name = ""; 
+			}
 			else
-				tab[tab_size].name = strtab + read_uint32(symtab[i].st_name, file_data);
+			{
+				tab[tab_size].name = "";
+			}
 			tab_size++;
 		}
 	}
